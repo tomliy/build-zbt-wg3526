@@ -5,42 +5,25 @@ target = sys.argv[1]
 with open(target) as f:
     content = f.read()
 
-# Step 1: Remove pcie0 wifi node entirely
-# Physical port 0 has no card, the 2.4G chip is on pcie2
-pcie0_block = (
-    '&pcie0 {\n'
-    '\twifi0: wifi@0,0 {\n'
-    '\t\tcompatible = \"pci14c3,7603\";\n'
-    '\t\treg = <0x0000 0 0 0 0>;\n'
-    '\t\tmediatek,mtd-eeprom = <&factory 0x0000>;\n'
-    '\t};\n'
-    '};\n'
-)
-
-if pcie0_block in content:
-    content = content.replace(pcie0_block, '', 1)
-    print('Removed pcie0 wifi node (port 0 has no card)')
+# Fix pcie1 first: change EEPROM offset to 0x0000, remove 5GHz freq-limit
+# Physical pcie1 has MT7603EN (2.4G chip), needs 2.4G calibration at factory 0x0000
+old = '\t\tmediatek,mtd-eeprom = <&factory 0x8000>;\n\t\tieee80211-freq-limit = <5000000 6000000>;'
+new = '\t\tmediatek,mtd-eeprom = <&factory 0x0000>;'
+if old in content:
+    content = content.replace(old, new, 1)
+    print('Fixed pcie1: 0x8000 -> 0x0000, removed freq-limit')
 else:
-    print('WARNING: pcie0 wifi block not found!')
+    print('WARNING: pcie1 pattern not found!')
 
-# Step 2: Add pcie2 wifi node for the 2.4G chip (MT7603EN on physical port 2)
-wifi2_block = (
-    '&pcie2 {\n'
-    '\twifi0: wifi@0,0 {\n'
-    '\t\tcompatible = \"pci14c3,7603\";\n'
-    '\t\treg = <0x0000 0 0 0 0>;\n'
-    '\t\tmediatek,mtd-eeprom = <&factory 0x0000>;\n'
-    '\t};\n'
-    '};\n'
-)
-
-# Insert after pcie1 block (before &ethernet, NOT inside it)
-marker = '&ethernet'
-if marker in content:
-    content = content.replace(marker, wifi2_block + '\n' + marker, 1)
-    print('Added pcie2 wifi node for 2.4G chip')
+# Fix pcie0: change EEPROM offset to 0x8000, add 5GHz freq-limit
+# Physical pcie0 has MT7662 (5G chip), needs 5G calibration at factory 0x8000
+old = '\t\tmediatek,mtd-eeprom = <&factory 0x0000>;\n\t};\n};\n\n&pcie1'
+new = '\t\tmediatek,mtd-eeprom = <&factory 0x8000>;\n\t\tieee80211-freq-limit = <5000000 6000000>;\n\t};\n};\n\n&pcie1'
+if old in content:
+    content = content.replace(old, new, 1)
+    print('Fixed pcie0: 0x0000 -> 0x8000, added freq-limit')
 else:
-    print('WARNING: ethernet marker not found!')
+    print('WARNING: pcie0 pattern not found!')
 
 with open(target, 'w') as f:
     f.write(content)
