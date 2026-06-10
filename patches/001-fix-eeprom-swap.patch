@@ -1,6 +1,6 @@
 --- a/target/linux/ramips/dts/mt7621_zbtlink_zbt-wg3526.dtsi
 +++ b/target/linux/ramips/dts/mt7621_zbtlink_zbt-wg3526.dtsi
-@@ -76,14 +76,14 @@
+@@ -93,14 +93,14 @@
  &pcie0 {
  	wifi0: wifi@0,0 {
  		compatible = "pci14c3,7603";
