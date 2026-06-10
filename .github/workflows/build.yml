@@ -1,0 +1,68 @@
+name: Build OpenWrt for ZBT-WG3526
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone OpenWrt 23.05 source
+        run: |
+          git clone --depth=1 --branch=openwrt-23.05 \
+            https://github.com/openwrt/openwrt.git source
+
+      - name: Apply DTS fix patch
+        run: |
+          cp patches/*.patch source/
+          cd source
+          for f in *.patch; do
+            echo "Applying $f"
+            patch -p1 < "$f"
+          done
+
+      - name: Configure
+        run: |
+          cd source
+          cat > .config << 'EOF'
+          CONFIG_TARGET_ramips=y
+          CONFIG_TARGET_ramips_mt7621=y
+          CONFIG_TARGET_ramips_mt7621_DEVICE_zbtlink_zbt-wg3526-16m=y
+          CONFIG_PACKAGE_kmod-mt7603e=y
+          CONFIG_PACKAGE_kmod-mt76x2e=y
+          CONFIG_PACKAGE_wpad-openssl=y
+          CONFIG_PACKAGE_dnsmasq-full=y
+          CONFIG_PACKAGE_luci=y
+          CONFIG_PACKAGE_luci-ssl=y
+          CONFIG_DEVEL=y
+          CONFIG_CCACHE=y
+          EOF
+          make defconfig
+
+      - name: Download dependencies
+        run: |
+          cd source
+          make download -j4
+          find dl -size -1024c -exec ls -l {} \;
+
+      - name: Build toolchain
+        run: |
+          cd source
+          make tools/install -j$(nproc)
+          make toolchain/install -j$(nproc)
+
+      - name: Build target
+        run: |
+          cd source
+          make -j$(nproc) || make -j1 V=s
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-zbt-wg3526-firmware
+          path: source/bin/targets/ramips/mt7621/*.bin
