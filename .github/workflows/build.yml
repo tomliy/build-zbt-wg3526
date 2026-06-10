@@ -31,13 +31,6 @@ jobs:
           CONFIG_TARGET_ramips_mt7621_DEVICE_zbtlink_zbt-wg3526-16m=y
           CONFIG_PACKAGE_kmod-mt7603e=y
           CONFIG_PACKAGE_kmod-mt76x2e=y
-          CONFIG_PACKAGE_wpad-openssl=y
-          CONFIG_PACKAGE_dnsmasq-full=y
-          CONFIG_PACKAGE_dnsmasq=n
-          CONFIG_PACKAGE_luci=y
-          CONFIG_PACKAGE_luci-ssl=y
-          CONFIG_DEVEL=y
-          CONFIG_CCACHE=y
           EOF
           make defconfig
 
@@ -56,7 +49,7 @@ jobs:
       - name: Build target
         run: |
           cd source
-          make -j$(nproc) || make -j1 V=s
+          make -j$(nproc)
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
