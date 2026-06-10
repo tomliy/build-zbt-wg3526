@@ -20,30 +20,24 @@ jobs:
       - name: Fix DTS EEPROM offsets
         run: |
           cd source/target/linux/ramips/dts
-          python3 << 'PYEOF'
-with open('mt7621_zbtlink_zbt-wg3526.dtsi') as f:
+          python3 -c '
+with open("mt7621_zbtlink_zbt-wg3526.dtsi") as f:
     content = f.read()
 
-# pcie0: change EEPROM to 0x8000, add 5GHz freq-limit
-old = ('\t\tmediatek,mtd-eeprom = <&factory 0x0000>;\n'
-       '\t};\n};\n\n'
-       '&pcie1')
-new = ('\t\tmediatek,mtd-eeprom = <&factory 0x8000>;\n'
-       '\t\tieee80211-freq-limit = <5000000 6000000>;\n'
-       '\t};\n};\n\n'
-       '&pcie1')
+# Fix pcie1 first: remove freq-limit, change offset to 0x0000
+old = "\t\tmediatek,mtd-eeprom = <&factory 0x8000>;\n\t\tieee80211-freq-limit = <5000000 6000000>;"
+new = "\t\tmediatek,mtd-eeprom = <&factory 0x0000>;"
 content = content.replace(old, new, 1)
 
-# pcie1: change EEPROM to 0x0000, remove 5GHz freq-limit
-old = ('\t\tmediatek,mtd-eeprom = <&factory 0x8000>;\n'
-       '\t\tieee80211-freq-limit = <5000000 6000000>;')
-new = '\t\tmediatek,mtd-eeprom = <&factory 0x0000>;'
+# Fix pcie0: change offset to 0x8000, add freq-limit
+old = "\t\tmediatek,mtd-eeprom = <&factory 0x0000>;\n\t};\n};\n\n&pcie1"
+new = "\t\tmediatek,mtd-eeprom = <&factory 0x8000>;\n\t\tieee80211-freq-limit = <5000000 6000000>;\n\t};\n};\n\n&pcie1"
 content = content.replace(old, new, 1)
 
-with open('mt7621_zbtlink_zbt-wg3526.dtsi', 'w') as f:
+with open("mt7621_zbtlink_zbt-wg3526.dtsi", "w") as f:
     f.write(content)
 print("DTS fixed")
-PYEOF
+'
 
       - name: Configure
         run: |
