@@ -12,9 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clone OpenWrt 23.05 source
+      - name: Clone OpenWrt 23.05.5 source
         run: |
-          git clone --depth=1 --branch=openwrt-23.05 \
+          git clone --depth=1 --branch=v23.05.5 \
             https://github.com/openwrt/openwrt.git source
 
       - name: Fix DTS EEPROM offsets
